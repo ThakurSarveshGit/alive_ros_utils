@@ -31,10 +31,6 @@ def gps_callback(msg, gps_file):
         writer = csv.writer(f, delimiter=' ')
         writer.writerow(tum_data)
 
-
-from scipy.spatial.transform import Rotation as R
-import numpy as np
-
 # Initialize global variables for position and orientation
 current_position = np.array([0.0, 0.0, 0.0])
 current_orientation = R.from_quat([0.0, 0.0, 0.0, 1.0])
@@ -61,8 +57,9 @@ def imu_callback(msg, imu_file):
     current_orientation = imu_orientation
 
     # Rotate the velocity (angular_velocity) and integrate to update position
-    linear_velocity = np.array([msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z])
-    velocity_in_world_frame = current_orientation.apply(linear_velocity) * dt
+    linear_acceleration = np.array([msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z])
+    velocity_in_body_frame = current_orientation.inv().apply(linear_acceleration) * dt
+    velocity_in_world_frame = current_orientation.apply(velocity_in_body_frame)
     current_position += velocity_in_world_frame
 
     # TUM format: timestamp x y z qx qy qz qw
